@@ -1,3 +1,5 @@
+![](./cover.png)
+
 # 🎵 Music Player Application
 
 A full-stack, modern music player web application built as a monorepo. It features a robust backend API for managing audio files and a responsive, highly-polished frontend interface for playing music, managing playlists, and uploading tracks.
