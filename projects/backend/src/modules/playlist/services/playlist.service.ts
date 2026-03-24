@@ -1,58 +1,80 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Inject, Logger } from '@nestjs/common';
 import { DoublyLinkedList } from '../dsa/doubly-linked-list';
+import { SongData } from '../dsa/node';
+import { STORAGE_ADAPTER_TOKEN } from '../../storage/storage.module';
+import { StorageAdapter } from '../../storage/adapters/storage.adapter';
+import { PlaylistItemDto } from '../dtos/playlist-item.dto';
 
 @Injectable()
 export class PlaylistService {
   private playlist: DoublyLinkedList;
+  private readonly logger = new Logger(PlaylistService.name);
 
-  constructor() {
+  constructor(@Inject(STORAGE_ADAPTER_TOKEN) private storageAdapter: StorageAdapter) {
     this.playlist = new DoublyLinkedList();
-
-    // Adding some seed data for demonstration
-    this.playlist.insertAtEnd('Seek and Destroy');
-    this.playlist.insertAtEnd('Rock and Roll Ain’t Noise Pollution');
-    this.playlist.insertAtEnd('Sabbath Bloody Sabbath');
-    this.playlist.insertAtEnd('Good Times Bad Times');
   }
 
-  getPlaylist() {
+  getPlaylist(): PlaylistItemDto[] {
     return this.playlist.toArray();
   }
 
-  printPlaylist() {
-    this.playlist.print();
+  printPlaylist(): { message: string } {
+    const list = this.playlist.toArray();
+    this.logger.log(`Playlist: ${JSON.stringify(list, null, 2)}`);
     return { message: 'Playlist printed to server console.' };
   }
 
-  addSong(title: string, position?: number) {
+  addSong(data: SongData, position?: number): PlaylistItemDto[] {
     if (position !== undefined) {
-      const success = this.playlist.insertAtPosition(title, position);
+      const success = this.playlist.insertAtPosition(data, position);
       if (!success) {
         throw new BadRequestException(`Invalid position: ${position}`);
       }
     } else {
-      this.playlist.insertAtEnd(title);
+      this.playlist.insertAtEnd(data);
     }
     return this.getPlaylist();
   }
 
-  removeByTitle(title: string) {
-    const success = this.playlist.removeByTitle(title);
-    if (!success) {
+  async removeByTitle(title: string): Promise<PlaylistItemDto[]> {
+    const array = this.playlist.toArray();
+    const item = array.find((i) => i.title === title);
+
+    if (!item) {
       throw new NotFoundException(`Song "${title}" not found in playlist`);
     }
+
+    const removedData = this.playlist.removeByPosition(item.position);
+
+    if (removedData && removedData.filename) {
+      try {
+        await this.storageAdapter.deleteFile(removedData.filename);
+      } catch (err) {
+        this.logger.error(`Failed to delete file ${removedData.filename} from storage:`, err);
+      }
+    }
+
     return this.getPlaylist();
   }
 
-  removeByPosition(position: number) {
-    const removedTitle = this.playlist.removeByPosition(position);
-    if (!removedTitle) {
+  async removeByPosition(position: number): Promise<PlaylistItemDto[]> {
+    const removedData = this.playlist.removeByPosition(position);
+    if (!removedData) {
       throw new BadRequestException(`Invalid position: ${position}`);
     }
+
+    if (removedData.filename) {
+      try {
+        await this.storageAdapter.deleteFile(removedData.filename);
+      } catch (err) {
+        this.logger.error(`Failed to delete file ${removedData.filename} from storage:`, err);
+      }
+    }
+
     return this.getPlaylist();
   }
 
-  moveSong(fromPosition: number, toPosition: number) {
+  moveSong(fromPosition: number, toPosition: number): PlaylistItemDto[] {
     const success = this.playlist.move(fromPosition, toPosition);
     if (!success) {
       throw new BadRequestException(
