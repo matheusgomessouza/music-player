@@ -1,0 +1,35 @@
+<svg width="1440" height="900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient de fundo preto para verde escuro -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#000000;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#0a0f0a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#001a00;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Padrão de ruído para textura -->
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="noise" seed="2" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
+    </filter>
+    
+    <!-- Padrão de linhas diagonais sutis -->
+    <pattern id="diagonalLines" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="8" y2="8" stroke="#BFFF0008" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+  
+  <!-- Fundo base com gradiente -->
+  <rect width="1440" height="900" fill="url(#bgGradient)"/>
+  
+  <!-- Padrão de linhas diagonais -->
+  <rect width="1440" height="900" fill="url(#diagonalLines)"/>
+  
+  <!-- Textura de ruído sutil -->
+  <rect width="1440" height="900" fill="#BFFF0003" filter="url(#noise)" opacity="0.5"/>
+  
+  <!-- Adicionar alguns pontos de luz verdes súteis -->
+  <circle cx="200" cy="150" r="150" fill="#BFFF0008" filter="url(#noise)"/>
+  <circle cx="1200" cy="700" r="200" fill="#BFFF0005" filter="url(#noise)"/>
+  <circle cx="700" cy="450" r="100" fill="#BFFF0003" filter="url(#noise)"/>
+</svg>

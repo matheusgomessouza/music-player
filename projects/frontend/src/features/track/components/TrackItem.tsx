@@ -1,0 +1,66 @@
+import React from 'react';
+import { Trash2, GripVertical } from 'lucide-react';
+
+interface Track {
+  id: string;
+  title: string;
+  artist: string;
+  duration: string;
+}
+
+interface TrackItemProps {
+  track: Track;
+  isSelected: boolean;
+  onSelect: (track: Track) => void;
+  onDelete: (id: string) => void;
+  onDragStart: (e: React.DragEvent, index: number) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, index: number) => void;
+  index: number;
+}
+
+export default function TrackItem({
+  track,
+  isSelected,
+  onSelect,
+  onDelete,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  index,
+}: TrackItemProps) {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, index)}
+      onDragOver={onDragOver}
+      onDrop={(e) => onDrop(e, index)}
+      onClick={() => onSelect(track)}
+      className={`flex items-center justify-between cursor-move transition-all py-3 px-4 rounded-lg ${
+        isSelected
+          ? 'bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/50'
+          : 'bg-transparent border border-transparent hover:bg-white/5'
+      }`}
+    >
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        <GripVertical className="w-4 h-4 text-white flex-shrink-0 opacity-50" />
+        <div className="min-w-0 flex-1">
+          <p className="font-primary text-sm font-medium text-white truncate">{track.title}</p>
+          <p className="font-secondary text-xs text-[var(--color-text-secondary)] truncate">{track.artist}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-4 flex-shrink-0">
+        <span className="font-secondary text-xs text-[var(--color-text-secondary)]">{track.duration}</span>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(track.id);
+          }}
+          className="hover:opacity-80 transition-opacity"
+        >
+          <Trash2 className="w-4 h-4 text-[var(--color-text-secondary)] hover:text-[#FF6B6B] transition-colors" />
+        </button>
+      </div>
+    </div>
+  );
+}

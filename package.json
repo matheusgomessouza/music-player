@@ -1,0 +1,41 @@
+{
+  "name": "music-player",
+  "version": "0.1.0",
+  "description": "Full-stack Music Player Application",
+  "private": true,
+  "scripts": {
+    "dev": "docker-compose -f docker-compose.dev.yml up",
+    "dev:build": "docker-compose -f docker-compose.dev.yml up --build",
+    "dev:down": "docker-compose -f docker-compose.dev.yml down",
+    "dev:logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "dev:logs:api": "docker-compose -f docker-compose.dev.yml logs -f backend",
+    "dev:logs:web": "docker-compose -f docker-compose.dev.yml logs -f frontend",
+    "dev:db:migrate": "docker-compose -f docker-compose.dev.yml exec backend npx prisma migrate dev",
+    "dev:db:studio": "docker-compose -f docker-compose.dev.yml exec backend npx prisma studio",
+    "backend:install": "cd projects/backend && npm install",
+    "backend:build": "cd projects/backend && npm run build",
+    "backend:test": "cd projects/backend && npm run test",
+    "backend:lint": "cd projects/backend && npm run lint",
+    "frontend:install": "cd projects/frontend && npm install",
+    "frontend:build": "cd projects/frontend && npm run build",
+    "frontend:test": "cd projects/frontend && npm run test",
+    "frontend:lint": "cd projects/frontend && npm run lint",
+    "install:all": "npm run backend:install && npm run frontend:install",
+    "lint": "npm run backend:lint && npm run frontend:lint",
+    "test": "npm run backend:test && npm run frontend:test"
+  },
+  "devDependencies": {
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2"
+  },
+  "lint-staged": {
+    "projects/backend/src/**/*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "projects/frontend/src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}

@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: music-player-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-music_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-music_password}
+      POSTGRES_DB: ${POSTGRES_DB:-music_player_db}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-music_user}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - music-player-net
+
+  # MinIO (S3-compatible storage)
+  minio:
+    image: minio/minio:latest
+    container_name: music-player-s3
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_data:/minio_data
+    command: server /minio_data --console-address ":9001"
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - music-player-net
+
+  # NestJS Backend API
+  backend:
+    build:
+      context: ./projects/backend
+      dockerfile: Dockerfile
+    container_name: music-player-api
+    restart: unless-stopped
+    ports:
+      - '${API_PORT:-3001}:3001'
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-music_user}:${POSTGRES_PASSWORD:-music_password}@postgres:5432/${POSTGRES_DB:-music_player_db}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      UPLOAD_DIR: /app/uploads
+      # S3 Configuration (if using S3)
+      # AWS_REGION: ${AWS_REGION:-us-east-1}
+      # AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT:-http://minio:9000}
+      # AWS_S3_BUCKET: ${AWS_S3_BUCKET:-music-player}
+      # AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-minioadmin}
+      # AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-minioadmin}
+      # AWS_S3_FORCE_PATH_STYLE: ${AWS_S3_FORCE_PATH_STYLE:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./projects/backend/src:/app/src
+      - ./projects/backend/uploads:/app/uploads
+    networks:
+      - music-player-net
+    command: npm run start:dev
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./projects/frontend
+      dockerfile: Dockerfile
+    container_name: music-player-web
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3001/api}
+      VITE_API_TIMEOUT: ${VITE_API_TIMEOUT:-10000}
+    depends_on:
+      - backend
+    volumes:
+      - ./projects/frontend/src:/app/src
+    networks:
+      - music-player-net
+
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  music-player-net:
+    driver: bridge

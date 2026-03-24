@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+npm-debug.log
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Build
+dist/
+build/
+coverage/
+.next/
+out/
+
+# Testing
+.jest-cache/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Database
+postgres_data/
+minio_data/
+*.db
+*.sqlite
+
+# Project specific
+uploads/
+public/uploads/
+temp/
+tmp/
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+/designs
+/specs
