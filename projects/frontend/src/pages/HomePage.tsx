@@ -32,6 +32,9 @@ export default function HomePage() {
   const [currentTimeStr, setCurrentTimeStr] = useState("0:00");
   const [durationStr, setDurationStr] = useState("0:00");
   const [volume, setVolume] = useState(1);
+  const [isSeeking, setIsSeeking] = useState(false);
+  const [isShuffle, setIsShuffle] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -101,7 +104,7 @@ export default function HomePage() {
   }, [volume]);
 
   const handleTimeUpdate = () => {
-    if (audioRef.current) {
+    if (audioRef.current && !isSeeking) {
       const currentTime = audioRef.current.currentTime;
       const duration = audioRef.current.duration;
       setCurrentTimeStr(formatTime(currentTime));
@@ -118,11 +121,23 @@ export default function HomePage() {
   };
 
   const handleProgressChange = (newProgress: number) => {
+    // Update both visual progress and audio time immediately for live scrubbing/clicking
+    setProgress(newProgress);
+    
     if (audioRef.current && audioRef.current.duration) {
       const newTime = (newProgress / 100) * audioRef.current.duration;
-      audioRef.current.currentTime = newTime;
-      setProgress(newProgress);
+      if (Number.isFinite(newTime)) {
+        audioRef.current.currentTime = newTime;
+      }
     }
+  };
+
+  const handleSeekStart = () => {
+    setIsSeeking(true);
+  };
+
+  const handleSeekEnd = () => {
+    setIsSeeking(false);
   };
 
   const handleDeleteTrack = async (id: string) => {
@@ -184,31 +199,107 @@ export default function HomePage() {
     window.print();
   };
 
-  const handleNextTrack = () => {
-    if (currentTrack) {
-      const currentIndex = tracks.findIndex((t) => t.id === currentTrack.id);
-      if (currentIndex !== -1) {
-        const nextIndex = currentIndex === tracks.length - 1 ? 0 : currentIndex + 1;
-        handleSelectTrack(tracks[nextIndex]);
+  const getNextTrack = (): Track | null => {
+    if (!currentTrack || tracks.length === 0) return null;
+
+    if (repeatMode === 'one') {
+      return currentTrack;
+    }
+
+    if (isShuffle) {
+      const remainingTracks = tracks.filter(t => t.id !== currentTrack.id);
+      if (remainingTracks.length === 0) return repeatMode === 'all' ? currentTrack : null;
+      const randomIndex = Math.floor(Math.random() * remainingTracks.length);
+      return remainingTracks[randomIndex];
+    }
+
+    const currentIndex = tracks.findIndex((t) => t.id === currentTrack.id);
+    if (currentIndex !== -1) {
+      if (currentIndex === tracks.length - 1) {
+        return repeatMode === 'all' ? tracks[0] : null;
       }
+      return tracks[currentIndex + 1];
+    }
+    
+    return null;
+  };
+
+  const getPrevTrack = (): Track | null => {
+    if (!currentTrack || tracks.length === 0) return null;
+
+    // Shuffle behavior for previous is usually just going back in history, 
+    // but for simplicity here we'll just pick a random one or go back sequentially.
+    // Let's stick to sequential for "Previous" unless shuffle is very strictly defined.
+    // Or we can just random it too if shuffle is on.
+    if (isShuffle) {
+       const remainingTracks = tracks.filter(t => t.id !== currentTrack.id);
+       if (remainingTracks.length === 0) return currentTrack;
+       const randomIndex = Math.floor(Math.random() * remainingTracks.length);
+       return remainingTracks[randomIndex];
+    }
+
+    const currentIndex = tracks.findIndex((t) => t.id === currentTrack.id);
+    if (currentIndex !== -1) {
+      const prevIndex = currentIndex === 0 ? tracks.length - 1 : currentIndex - 1;
+      return tracks[prevIndex];
+    }
+    return null;
+  };
+
+  const handleNextTrack = () => {
+    const next = getNextTrack();
+    if (next) {
+      handleSelectTrack(next);
+    } else if (repeatMode === 'off' && currentTrack && tracks.findIndex(t => t.id === currentTrack.id) === tracks.length - 1) {
+       // End of playlist
+       setIsPlaying(false);
+       setProgress(0);
+       setCurrentTimeStr("0:00");
     }
   };
 
   const handlePrevTrack = () => {
-    if (currentTrack) {
-      const currentIndex = tracks.findIndex((t) => t.id === currentTrack.id);
-      if (currentIndex !== -1) {
-        const prevIndex = currentIndex === 0 ? tracks.length - 1 : currentIndex - 1;
-        handleSelectTrack(tracks[prevIndex]);
-      }
+    const prev = getPrevTrack();
+    if (prev) {
+      handleSelectTrack(prev);
     }
   };
 
   const handleEnded = () => {
-    setIsPlaying(false);
+    const next = getNextTrack();
+    
+    if (next) {
+      if (currentTrack && next.id === currentTrack.id) {
+        // If repeating the same song, we need to manually reset and play
+        // because React state updates might be batched (isPlaying true -> false -> true = no change)
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(console.error);
+        }
+        setIsPlaying(true);
+      } else {
+        // Changing tracks will trigger the useEffect
+        setCurrentTrack(next);
+        setIsPlaying(true);
+      }
+    } else {
+      setIsPlaying(false);
+    }
+    
     setProgress(0);
     setCurrentTimeStr("0:00");
-    handleNextTrack();
+  };
+
+  const handleShuffleToggle = () => {
+    setIsShuffle(!isShuffle);
+  };
+
+  const handleRepeatToggle = () => {
+    setRepeatMode(prev => {
+      if (prev === 'off') return 'all';
+      if (prev === 'all') return 'one';
+      return 'off';
+    });
   };
 
   return (
@@ -288,6 +379,8 @@ export default function HomePage() {
               duration={durationStr}
               progress={progress}
               onProgressChange={handleProgressChange}
+              onSeekStart={handleSeekStart}
+              onSeekEnd={handleSeekEnd}
             />
 
             <PlayerControls
@@ -301,6 +394,10 @@ export default function HomePage() {
               onSkipForwardClick={handleNextTrack}
               volume={volume}
               onVolumeChange={setVolume}
+              isShuffle={isShuffle}
+              onShuffleToggle={handleShuffleToggle}
+              repeatMode={repeatMode}
+              onRepeatToggle={handleRepeatToggle}
             />
           </div>
         </div>

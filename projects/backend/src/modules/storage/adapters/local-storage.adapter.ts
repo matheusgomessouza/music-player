@@ -42,10 +42,19 @@ export class LocalStorageAdapter extends StorageAdapter {
     return await fsPromises.readFile(filePath);
   }
 
-  async getFile(key: string): Promise<Readable> {
+  async getFile(key: string, start?: number, end?: number): Promise<Readable> {
     const filePath = path.join(this.uploadDir, key);
-    // There is no await for createReadStream, so we can just return it. To satisfy eslint, we can await a resolve or just keep it without async. Wait, the base class requires it to be async.
-    return Promise.resolve(fs.createReadStream(filePath));
+    return Promise.resolve(fs.createReadStream(filePath, { start, end }));
+  }
+
+  async getFileSize(key: string): Promise<number> {
+    const filePath = path.join(this.uploadDir, key);
+    try {
+      const stats = await fsPromises.stat(filePath);
+      return stats.size;
+    } catch {
+      return 0;
+    }
   }
 
   async deleteFile(key: string): Promise<void> {
@@ -68,5 +77,27 @@ export class LocalStorageAdapter extends StorageAdapter {
   async getFileUrl(key: string): Promise<string> {
     // For local storage, return the relative path
     return Promise.resolve(`/uploads/${key}`);
+  }
+
+  async listFiles(directory?: string): Promise<string[]> {
+    const dirPath = directory ? path.join(this.uploadDir, directory) : this.uploadDir;
+    try {
+      const files = await fsPromises.readdir(dirPath);
+      // Filter out directories, keeping only files
+      const fileList = [];
+      for (const file of files) {
+        const filePath = path.join(dirPath, file);
+        const stat = await fsPromises.stat(filePath);
+        if (stat.isFile()) {
+          fileList.push(file);
+        }
+      }
+      return fileList;
+    } catch (error: unknown) {
+      if (error instanceof Error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return [];
+      }
+      throw error;
+    }
   }
 }

@@ -9,11 +9,15 @@ export abstract class StorageAdapter {
 
   abstract downloadFile(key: string): Promise<Buffer>;
 
-  abstract getFile(key: string): Promise<Readable>;
+  abstract getFile(key: string, start?: number, end?: number): Promise<Readable>;
+
+  abstract getFileSize(key: string): Promise<number>;
 
   abstract deleteFile(key: string): Promise<void>;
 
   abstract fileExists(key: string): Promise<boolean>;
 
   abstract getFileUrl(key: string): Promise<string>;
+
+  abstract listFiles(directory?: string): Promise<string[]>;
 }

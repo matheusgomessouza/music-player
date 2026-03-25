@@ -28,16 +28,21 @@ export class TrackService {
     };
   }
 
-  async getTrackFile(filename: string): Promise<{ filename: string; mimeType: string }> {
+  async getTrackFile(
+    filename: string,
+  ): Promise<{ filename: string; mimeType: string; size: number }> {
     const exists = await this.storageAdapter.fileExists(filename);
 
     if (!exists) {
       throw new NotFoundException(`File ${filename} not found`);
     }
 
+    const size = await this.storageAdapter.getFileSize(filename);
+
     return {
       filename,
-      mimeType: 'audio/mpeg', // basic fallback, usually we would store the exact type
+      mimeType: 'audio/mpeg', // basic fallback
+      size,
     };
   }
 }
