@@ -39,19 +39,19 @@ export default function TrackItem({
       onClick={() => onSelect(track)}
       className={`flex items-center justify-between cursor-move transition-all py-3 px-4 rounded-lg ${
         isSelected
-          ? 'bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/50'
+          ? 'bg-primary/20 border border-primary/50'
           : 'bg-transparent border border-transparent hover:bg-white/5'
       }`}
     >
       <div className="flex items-center gap-4 flex-1 min-w-0">
-        <GripVertical className="w-4 h-4 text-white flex-shrink-0 opacity-50" />
+        <GripVertical className="w-4 h-4 text-white shrink-0 opacity-50" />
         <div className="min-w-0 flex-1">
           <p className="font-primary text-sm font-medium text-white truncate">{track.title}</p>
-          <p className="font-secondary text-xs text-[var(--color-text-secondary)] truncate">{track.artist}</p>
+          <p className="font-secondary text-xs text-text-secondary truncate">{track.artist}</p>
         </div>
       </div>
-      <div className="flex items-center gap-4 flex-shrink-0">
-        <span className="font-secondary text-xs text-[var(--color-text-secondary)]">{track.duration}</span>
+      <div className="flex items-center gap-4 shrink-0">
+        <span className="font-secondary text-xs text-text-secondary">{track.duration}</span>
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -59,7 +59,7 @@ export default function TrackItem({
           }}
           className="hover:opacity-80 transition-opacity"
         >
-          <Trash2 className="w-4 h-4 text-[var(--color-text-secondary)] hover:text-[#FF6B6B] transition-colors" />
+          <Trash2 className="w-4 h-4 text-text-secondary hover:text-error transition-colors" />
         </button>
       </div>
     </div>

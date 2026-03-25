@@ -23,8 +23,12 @@ export class S3StorageAdapter implements StorageAdapter {
     return Promise.resolve(Buffer.from(''));
   }
 
-  async getFile(_key: string): Promise<Readable> {
+  async getFile(_key: string, _start?: number, _end?: number): Promise<Readable> {
     return Promise.resolve(new Readable());
+  }
+
+  async getFileSize(_key: string): Promise<number> {
+    return Promise.resolve(0);
   }
 
   async deleteFile(_key: string): Promise<void> {
@@ -37,5 +41,9 @@ export class S3StorageAdapter implements StorageAdapter {
 
   async getFileUrl(key: string): Promise<string> {
     return Promise.resolve(`https://${this.config.bucket}.s3.amazonaws.com/${key}`);
+  }
+
+  async listFiles(): Promise<string[]> {
+    return Promise.resolve([]);
   }
 }

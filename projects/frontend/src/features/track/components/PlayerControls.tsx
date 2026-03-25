@@ -1,4 +1,4 @@
-import { Play, Pause, Rewind, FastForward, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Rewind, FastForward, Volume2, VolumeX, Shuffle, Repeat } from 'lucide-react';
 import React, { useState } from 'react';
 
 interface PlayerControlsProps {
@@ -8,6 +8,10 @@ interface PlayerControlsProps {
   onSkipForwardClick?: () => void;
   volume: number;
   onVolumeChange: (volume: number) => void;
+  isShuffle: boolean;
+  onShuffleToggle: () => void;
+  repeatMode: 'off' | 'all' | 'one';
+  onRepeatToggle: () => void;
 }
 
 export default function PlayerControls({
@@ -17,6 +21,10 @@ export default function PlayerControls({
   onSkipForwardClick,
   volume,
   onVolumeChange,
+  isShuffle,
+  onShuffleToggle,
+  repeatMode,
+  onRepeatToggle,
 }: PlayerControlsProps) {
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(volume);
@@ -45,10 +53,18 @@ export default function PlayerControls({
   return (
     <div className="flex items-center justify-between w-full relative">
       {/* Spacer to keep center controls centered */}
-      <div className="flex-1"></div>
+      <div className="flex-1 hidden md:block"></div>
 
       {/* Main Controls */}
-      <div className="flex items-center justify-center gap-6 absolute left-1/2 -translate-x-1/2">
+      <div className="flex items-center justify-center gap-4 md:gap-6 w-full md:w-auto md:absolute md:left-1/2 md:-translate-x-1/2">
+        <button
+          onClick={onShuffleToggle}
+          className={`hover:opacity-80 transition-colors ${isShuffle ? 'text-primary' : 'text-text-secondary'}`}
+          title="Shuffle"
+        >
+          <Shuffle className="w-5 h-5" />
+        </button>
+
         <button 
           onClick={onSkipBackClick}
           className="hover:opacity-80 transition-opacity"
@@ -58,7 +74,7 @@ export default function PlayerControls({
         
         <button
           onClick={onPlayPauseClick}
-          className="w-12 h-12 flex items-center justify-center rounded-full bg-[var(--color-primary)] text-black hover:bg-[#a6e600] transition-colors shadow-[0_0_12px_var(--color-primary)]"
+          className="w-12 h-12 flex items-center justify-center rounded-full bg-primary text-black hover:bg-[#a6e600] transition-colors shadow-[0_0_12px_var(--color-primary)]"
         >
           {isPlaying ? (
             <Pause className="w-6 h-6 fill-current" />
@@ -73,10 +89,21 @@ export default function PlayerControls({
         >
           <FastForward className="w-6 h-6 text-white" />
         </button>
+
+        <button
+          onClick={onRepeatToggle}
+          className={`hover:opacity-80 transition-colors relative ${repeatMode !== 'off' ? 'text-primary' : 'text-text-secondary'}`}
+          title="Repeat"
+        >
+          <Repeat className="w-5 h-5" />
+          {repeatMode === 'one' && (
+            <span className="absolute -top-1 -right-1 text-[10px] font-bold bg-primary text-black rounded-full w-3.5 h-3.5 flex items-center justify-center">1</span>
+          )}
+        </button>
       </div>
 
       {/* Volume Control */}
-      <div className="flex items-center gap-3 flex-1 justify-end">
+      <div className="hidden md:flex items-center gap-3 flex-1 justify-end">
         <button 
           onClick={handleMuteToggle}
           className="hover:opacity-80 transition-opacity"
@@ -95,7 +122,7 @@ export default function PlayerControls({
             step="0.01"
             value={isMuted ? 0 : volume}
             onChange={handleVolumeSliderChange}
-            className="w-full h-1.5 bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-primary hover:accent-white transition-all outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[var(--color-primary)] [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-125 hover:[&::-webkit-slider-thumb]:bg-white"
+            className="w-full h-1.5 bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-primary hover:accent-white transition-all outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-125 hover:[&::-webkit-slider-thumb]:bg-white"
             style={{
               background: `linear-gradient(to right, var(--color-primary) ${(isMuted ? 0 : volume) * 100}%, #404040 ${(isMuted ? 0 : volume) * 100}%)`
             }}
