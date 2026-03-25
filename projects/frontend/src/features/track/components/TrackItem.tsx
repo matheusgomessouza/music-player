@@ -6,6 +6,7 @@ interface Track {
   title: string;
   artist: string;
   duration: string;
+  position: number;
 }
 
 interface TrackItemProps {

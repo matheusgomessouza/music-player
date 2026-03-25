@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { StorageModule } from './modules/storage/storage.module';
 import { PlaylistModule } from './modules/playlist/playlist.module';
+import { TrackModule } from './modules/track/track.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { PlaylistModule } from './modules/playlist/playlist.module';
     }),
     StorageModule,
     PlaylistModule,
+    TrackModule,
   ],
   controllers: [AppController],
   providers: [AppService],

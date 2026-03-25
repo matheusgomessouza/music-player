@@ -1,75 +1,43 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { TrackRepository } from '../repositories/track.repository';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { CreateTrackDto } from '../dtos/create-track.dto';
-import { UpdateTrackDto } from '../dtos/update-track.dto';
-import { TrackDto } from '../dtos/track.dto';
-import { plainToInstance } from 'class-transformer';
+import { STORAGE_ADAPTER_TOKEN } from '../../storage/storage.module';
+import { StorageAdapter } from '../../storage/adapters/storage.adapter';
+import { TrackResponseDto } from '../dtos/track-response.dto';
 
 @Injectable()
 export class TrackService {
-  constructor(private trackRepository: TrackRepository) {}
+  constructor(@Inject(STORAGE_ADAPTER_TOKEN) private storageAdapter: StorageAdapter) {}
 
-  async uploadTrack(file: Express.Multer.File, createTrackDto: CreateTrackDto): Promise<TrackDto> {
+  async uploadTrack(
+    file: Express.Multer.File,
+    createTrackDto: CreateTrackDto,
+  ): Promise<TrackResponseDto> {
     if (!file) {
       throw new BadRequestException('File is required');
     }
 
-    const track = await this.trackRepository.create({
-      ...createTrackDto,
-      filename: file.filename || file.originalname,
+    const filename = `${Date.now()}-${file.originalname}`;
+    await this.storageAdapter.uploadFile(filename, file.buffer, file.mimetype);
+
+    return {
+      title: createTrackDto.title,
+      artist: createTrackDto.artist,
+      filename,
       mimeType: file.mimetype,
       size: file.size,
-    });
-
-    return plainToInstance(TrackDto, track, { excludeExtraneousValues: true });
+    };
   }
 
-  async getAllTracks(take?: number, skip?: number): Promise<TrackDto[]> {
-    const tracks = await this.trackRepository.findAll(take, skip);
-    return plainToInstance(TrackDto, tracks, { excludeExtraneousValues: true });
-  }
+  async getTrackFile(filename: string): Promise<{ filename: string; mimeType: string }> {
+    const exists = await this.storageAdapter.fileExists(filename);
 
-  async getTrackById(id: string): Promise<TrackDto> {
-    const track = await this.trackRepository.findById(id);
-
-    if (!track) {
-      throw new NotFoundException(`Track with ID ${id} not found`);
-    }
-
-    return plainToInstance(TrackDto, track, { excludeExtraneousValues: true });
-  }
-
-  async updateTrack(id: string, updateTrackDto: UpdateTrackDto): Promise<TrackDto> {
-    const track = await this.trackRepository.findById(id);
-
-    if (!track) {
-      throw new NotFoundException(`Track with ID ${id} not found`);
-    }
-
-    const updatedTrack = await this.trackRepository.update(id, updateTrackDto);
-    return plainToInstance(TrackDto, updatedTrack, { excludeExtraneousValues: true });
-  }
-
-  async deleteTrack(id: string): Promise<void> {
-    const track = await this.trackRepository.findById(id);
-
-    if (!track) {
-      throw new NotFoundException(`Track with ID ${id} not found`);
-    }
-
-    await this.trackRepository.delete(id);
-  }
-
-  async getTrackFile(id: string): Promise<{ filename: string; mimeType: string }> {
-    const track = await this.trackRepository.findById(id);
-
-    if (!track) {
-      throw new NotFoundException(`Track with ID ${id} not found`);
+    if (!exists) {
+      throw new NotFoundException(`File ${filename} not found`);
     }
 
     return {
-      filename: track.filename,
-      mimeType: track.mimeType,
+      filename,
+      mimeType: 'audio/mpeg', // basic fallback, usually we would store the exact type
     };
   }
 }

@@ -1,4 +1,4 @@
-import { Node } from './node';
+import { Node, SongData } from './node';
 
 export class DoublyLinkedList {
   private head: Node | null;
@@ -12,8 +12,8 @@ export class DoublyLinkedList {
   }
 
   // 1. Insert a song at the end of the playlist
-  public insertAtEnd(title: string): void {
-    const newNode = new Node(title);
+  public insertAtEnd(data: SongData): void {
+    const newNode = new Node(data);
 
     if (this.size === 0) {
       this.head = newNode;
@@ -29,18 +29,17 @@ export class DoublyLinkedList {
   }
 
   // 2. Insert a song at a specific position (1-based index)
-  public insertAtPosition(title: string, position: number): boolean {
+  public insertAtPosition(data: SongData, position: number): boolean {
     if (position < 1 || position > this.size + 1) {
-      console.log(`[Error] Invalid position: ${position}. Operation not performed.`);
       return false; // Invalid position
     }
 
     if (position === this.size + 1) {
-      this.insertAtEnd(title);
+      this.insertAtEnd(data);
       return true;
     }
 
-    const newNode = new Node(title);
+    const newNode = new Node(data);
 
     if (position === 1) {
       newNode.next = this.head;
@@ -86,14 +85,12 @@ export class DoublyLinkedList {
       current = current.next;
     }
 
-    console.log(`[Error] Song "${title}" not found.`);
     return false;
   }
 
   // 4. Remove a song by its numeric position (1-based index)
-  public removeByPosition(position: number): string | null {
+  public removeByPosition(position: number): SongData | null {
     if (position < 1 || position > this.size) {
-      console.log(`[Error] Invalid position: ${position}. Operation not performed.`);
       return null;
     }
 
@@ -107,7 +104,7 @@ export class DoublyLinkedList {
 
     if (current) {
       this.unlinkNode(current);
-      return current.title;
+      return current.data;
     }
 
     return null;
@@ -116,7 +113,6 @@ export class DoublyLinkedList {
   // 5. Move a song to another position
   public move(fromPosition: number, toPosition: number): boolean {
     if (fromPosition < 1 || fromPosition > this.size || toPosition < 1 || toPosition > this.size) {
-      console.log(`[Error] Invalid positions for move operation.`);
       return false;
     }
 
@@ -125,43 +121,36 @@ export class DoublyLinkedList {
     }
 
     // First remove the node from the current position
-    const title = this.removeByPosition(fromPosition);
+    const data = this.removeByPosition(fromPosition);
 
-    if (title) {
+    if (data) {
       // Re-insert at the new position
-      return this.insertAtPosition(title, toPosition);
+      return this.insertAtPosition(data, toPosition);
     }
 
     return false;
   }
 
-  // 6. Print the numbered playlist
-  public print(): void {
-    console.log('--- Current Playlist ---');
-    let current = this.head;
-    let index = 1;
-
-    if (this.size === 0) {
-      console.log('Empty playlist.');
-      return;
-    }
-
-    while (current !== null) {
-      console.log(`${index}. ${current.title}`);
-      current = current.next;
-      index++;
-    }
-    console.log('------------------------\n');
-  }
-
-  // 7. Convert playlist to Array (for API responses)
-  public toArray(): { position: number; title: string }[] {
+  // 6. Convert playlist to Array (for API responses)
+  public toArray(): {
+    position: number;
+    title: string;
+    artist: string;
+    filename: string;
+    duration: string;
+  }[] {
     const result = [];
     let current = this.head;
     let index = 1;
 
     while (current !== null) {
-      result.push({ position: index, title: current.title });
+      result.push({
+        position: index,
+        title: current.data.title,
+        artist: current.data.artist,
+        filename: current.data.filename,
+        duration: current.data.duration || '0:00',
+      });
       current = current.next;
       index++;
     }

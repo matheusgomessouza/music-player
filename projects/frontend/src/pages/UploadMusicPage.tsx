@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AlertCircle, FileUp, Check, X, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LabeledInput from '../shared/ui/LabeledInput';
-import { addSong } from '../services/api';
+import { uploadTrack, addSong } from '../services/api';
 
 type UploadState = 'form' | 'uploading' | 'success' | 'error';
 
@@ -10,6 +10,7 @@ interface UploadFormData {
   title: string;
   artist: string;
   file: File | null;
+  duration: string;
 }
 
 export default function UploadMusicPage() {
@@ -19,6 +20,7 @@ export default function UploadMusicPage() {
     title: '',
     artist: '',
     file: null,
+    duration: '0:00',
   });
   const [error, setError] = useState<string>('');
   const [dragActive, setDragActive] = useState(false);
@@ -53,8 +55,11 @@ export default function UploadMusicPage() {
   };
 
   const validateAndSetFile = (file: File) => {
-    const validTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/aac'];
-    if (!validTypes.includes(file.type)) {
+    const validTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/mp3'];
+    const validExtensions = ['mp3', 'wav', 'ogg', 'aac'];
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    
+    if (!validTypes.includes(file.type) && !validExtensions.includes(extension)) {
       setError('Please upload a valid audio file (MP3, WAV, OGG, or AAC)');
       return;
     }
@@ -64,10 +69,41 @@ export default function UploadMusicPage() {
       return;
     }
 
-    setFormData(prev => ({
-      ...prev,
-      file,
-    }));
+    const url = URL.createObjectURL(file);
+    const audio = new Audio(url);
+    
+    audio.onloadedmetadata = () => {
+      const minutes = Math.floor(audio.duration / 60);
+      const seconds = Math.floor(audio.duration % 60);
+      const durationStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      setFormData(prev => ({
+        ...prev,
+        file,
+        duration: durationStr,
+      }));
+      URL.revokeObjectURL(url);
+    };
+
+    audio.onerror = () => {
+      setFormData(prev => ({
+        ...prev,
+        file,
+        duration: '0:00'
+      }));
+      URL.revokeObjectURL(url);
+    };
+
+    // Fallback in case events don't fire quickly
+    setTimeout(() => {
+      setFormData(prev => {
+        if (!prev.file) {
+          return { ...prev, file, duration: '0:00' };
+        }
+        return prev;
+      });
+    }, 1000);
+
     setError('');
   };
 
@@ -92,18 +128,22 @@ export default function UploadMusicPage() {
     }, 200);
 
     try {
-      // Send the actual API request to add the song
-      await addSong(formData.title, formData.artist);
+      // Send the actual API request to upload the file
+      const uploadedTrack = await uploadTrack(formData.file, formData.title, formData.artist);
+      
+      // Add the song to the playlist
+      await addSong(formData.title, formData.artist, uploadedTrack.filename, formData.duration);
       
       clearInterval(interval);
       setUploadProgress(100);
       
       // Short delay for visual effect of hitting 100%
       setTimeout(() => setState('success'), 500);
-    } catch (err) {
+    } catch (err: unknown) {
       clearInterval(interval);
       console.error('Failed to add song:', err);
-      setError('There was an error saving your song to the playlist. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'There was an error saving your song to the playlist. Please try again.';
+      setError(errorMessage);
       setState('error');
     }
   };
@@ -113,6 +153,7 @@ export default function UploadMusicPage() {
       title: '',
       artist: '',
       file: null,
+      duration: '0:00',
     });
   };
 
@@ -160,7 +201,7 @@ export default function UploadMusicPage() {
           
           {/* Form State */}
           {state === 'form' && (
-            <form onSubmit={handleSubmit} className="w-full flex flex-col gap-6 items-center max-w-md">
+            <form onSubmit={handleSubmit} className="w-full flex flex-col gap-6 items-center">
               <h2 className="font-primary text-2xl font-semibold text-white">Add New Song</h2>
 
               {/* Form Inputs */}
