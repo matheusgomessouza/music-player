@@ -6,6 +6,7 @@ import PlaylistHeader from "../features/track/components/PlaylistHeader";
 import PlayerControls from "../features/track/components/PlayerControls";
 import ProgressBar from "../features/track/components/ProgressBar";
 import { getPlaylist, removeSongByPosition, moveSong } from "../services/api";
+import Footer from "../shared/ui/Footer";
 
 interface Track {
   id: string;
@@ -401,6 +402,7 @@ export default function HomePage() {
             />
           </div>
         </div>
+        <Footer />
       </div>
     </div>
   );

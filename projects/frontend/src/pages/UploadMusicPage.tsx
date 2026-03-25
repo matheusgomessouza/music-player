@@ -3,6 +3,7 @@ import { AlertCircle, FileUp, Check, X, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LabeledInput from '../shared/ui/LabeledInput';
 import { uploadTrack, addSong } from '../services/api';
+import Footer from '../shared/ui/Footer';
 
 type UploadState = 'form' | 'uploading' | 'success' | 'error';
 
@@ -359,6 +360,7 @@ export default function UploadMusicPage() {
             </div>
           )}
         </div>
+        <Footer />
       </div>
     </div>
   );
