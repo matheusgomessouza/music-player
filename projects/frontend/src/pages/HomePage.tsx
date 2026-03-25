@@ -308,7 +308,7 @@ export default function HomePage() {
         {currentTrack?.filename && (
           <audio
             ref={audioRef}
-            src={`http://localhost:3000/api/v1/tracks/stream/${currentTrack.filename}`}
+            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/tracks/stream/${currentTrack.filename}`}
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
             onEnded={handleEnded}
