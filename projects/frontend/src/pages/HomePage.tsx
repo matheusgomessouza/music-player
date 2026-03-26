@@ -5,7 +5,7 @@ import TrackItem from "../features/track/components/TrackItem";
 import PlaylistHeader from "../features/track/components/PlaylistHeader";
 import PlayerControls from "../features/track/components/PlayerControls";
 import ProgressBar from "../features/track/components/ProgressBar";
-import { getPlaylist, removeSongByPosition, moveSong } from "../services/api";
+import { getPlaylist, removeSongByPosition, moveSong, printPlaylist } from "../services/api";
 import Footer from "../shared/ui/Footer";
 
 interface Track {
@@ -196,8 +196,15 @@ export default function HomePage() {
     }
   };
 
-  const handlePrintPlaylist = () => {
-    window.print();
+  const handlePrintPlaylist = async () => {
+    try {
+      const { content } = await printPlaylist();
+      console.log(content);
+      alert("Playlist printed to console! Check your browser developer tools.");
+    } catch (error) {
+      console.error("Failed to print playlist", error);
+      alert("Failed to print playlist.");
+    }
   };
 
   const getNextTrack = (): Track | null => {

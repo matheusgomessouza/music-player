@@ -88,10 +88,19 @@ export class PlaylistService implements OnModuleInit {
     return this.playlist.toArray();
   }
 
-  printPlaylist(): { message: string } {
+  printPlaylist(): { message: string; content: string } {
     const list = this.playlist.toArray();
-    this.logger.log(`Playlist: ${JSON.stringify(list, null, 2)}`);
-    return { message: 'Playlist printed to server console.' };
+    let content = '--- PLAYLIST ---\n';
+    list.forEach((item, index) => {
+      content += `${index + 1}. ${item.title} - ${item.artist} (${item.duration || '0:00'})\n`;
+    });
+    content += '----------------';
+
+    this.logger.log(`Playlist generated for printing:\n${content}`);
+    return { 
+      message: 'Playlist generated successfully.',
+      content 
+    };
   }
 
   addSong(data: SongData, position?: number): PlaylistItemDto[] {

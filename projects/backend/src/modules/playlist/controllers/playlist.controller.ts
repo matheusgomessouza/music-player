@@ -14,7 +14,7 @@ export class PlaylistController {
   }
 
   @Get('print')
-  printPlaylist(): { message: string } {
+  printPlaylist(): { message: string; content: string } {
     return this.playlistService.printPlaylist();
   }
 
